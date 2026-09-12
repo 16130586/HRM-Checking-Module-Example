@@ -18,7 +18,15 @@ Face attendance application with a .NET 8 API, PostgreSQL with pgvector, and a R
 
 ## Run locally
 
-Start PostgreSQL:
+Start PostgreSQL and the API with Docker:
+
+```powershell
+docker compose up -d --build
+```
+
+The API is available at `http://localhost:5094` and Swagger is available at `http://localhost:5094/swagger`.
+
+To start only the database:
 
 ```powershell
 docker compose up -d postgres-pgvector
@@ -31,6 +39,8 @@ cd FaceAPI/FaceAPI
 dotnet restore
 dotnet run
 ```
+
+When running the API outside Docker, PostgreSQL must be available at `localhost:5432`.
 
 Install frontend dependencies and start Vite:
 

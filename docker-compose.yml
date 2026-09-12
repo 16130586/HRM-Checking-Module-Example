@@ -9,3 +9,23 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d facedb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./FaceAPI/FaceAPI
+      dockerfile: Dockerfile
+    container_name: face-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres-pgvector;Port=5432;Database=facedb;Username=postgres;Password=postgres
+    ports:
+      - "5094:8080"
+    depends_on:
+      postgres-pgvector:
+        condition: service_healthy
+    restart: unless-stopped
