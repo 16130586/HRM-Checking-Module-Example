@@ -7,7 +7,6 @@ Face attendance application with a .NET 8 API, PostgreSQL with pgvector, and a R
 - `FaceAPI/FaceAPI` - ASP.NET Core API, EF Core, PostgreSQL/pgvector, and ONNX face embeddings
 - `FaceGuiding/face-attendance-ui` - React frontend
 - `docker-compose.yml` - PostgreSQL with pgvector
-- `ngrok.yml` - local tunnel definitions without credentials
 
 ## Requirements
 
@@ -66,8 +65,8 @@ The ONNX model is stored with Git LFS. Run `git lfs pull` after cloning if the m
 
 ## Ngrok
 
-Authenticate ngrok through its local CLI configuration or environment. Credentials are intentionally not stored in `ngrok.yml`.
+Expose the Vite frontend through ngrok. Vite proxies `/api` requests to the local API at port `5094`.
 
 ```powershell
-ngrok start --all --config ngrok.yml
+ngrok http 5173
 ```
