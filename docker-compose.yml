@@ -1,0 +1,11 @@
+services:
+  postgres-pgvector:
+    image: ankane/pgvector
+    container_name: postgres-pgvector
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: facedb
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
