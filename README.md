@@ -16,6 +16,8 @@ Face attendance application with a .NET 8 API, PostgreSQL with pgvector, and a R
 - Docker Desktop
 - Git LFS for the ONNX model
 
+The API uses `SixLabors.ImageSharp` `2.1.7` and does not include the unused `ImageSharp.Drawing` package, so the Docker build does not require a Six Labors license.
+
 ## Run locally
 
 Start PostgreSQL and the API with Docker:
