@@ -17,6 +17,21 @@ export default defineConfig({
         target: "http://localhost:5094",
         changeOrigin: true,
         secure: false,
+        xfwd: true,
+        configure(proxy) {
+          proxy.on("proxyReq", (proxyRequest, request) => {
+            const forwardedFor =
+              request.headers["x-forwarded-for"] ||
+              request.socket.remoteAddress;
+
+            if (forwardedFor) {
+              proxyRequest.setHeader(
+                "X-Forwarded-For",
+                forwardedFor
+              );
+            }
+          });
+        },
       },
     },
   },

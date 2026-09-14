@@ -7,6 +7,7 @@ namespace FaceAPI.DbContexts
     {
         public DbSet<User> Users { get; set; }
         public DbSet<FaceEmbedding> FaceEmbeddings { get; set; }
+        public DbSet<AttendanceHistory> AttendanceHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -16,6 +17,15 @@ namespace FaceAPI.DbContexts
                   .HasIndex(e => e.Embedding)
                   .HasMethod("hnsw")
                   .HasOperators("vector_cosine_ops");
+
+            modelBuilder.Entity<AttendanceHistory>()
+                .HasIndex(x => x.CheckedInAtUtc);
+
+            modelBuilder.Entity<AttendanceHistory>()
+                .HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

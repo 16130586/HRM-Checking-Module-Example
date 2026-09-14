@@ -127,13 +127,86 @@ namespace FaceAPI.Controllers
             if (match == null)
                 return NotFound("Không nhận diện được nhân viên!");
 
+            var matchedUser = match.User!;
+            var clientIp = GetClientIpAddress();
+            var history = new AttendanceHistory
+            {
+                UserId = matchedUser.Id,
+                UserCode = matchedUser.UserCode,
+                FullName = matchedUser.FullName,
+                CheckedInAtUtc = DateTime.UtcNow,
+                IpAddress = clientIp?.ToString(),
+                IpAddressV4 = GetIpV4(clientIp),
+                IpAddressV6 = GetIpV6(clientIp),
+                UserAgent = Request.Headers.UserAgent.ToString(),
+            };
+
+            _db.AttendanceHistories.Add(history);
+            await _db.SaveChangesAsync();
+
             return Ok(new
             {
                 Message = "Chấm công thành công!",
-                UserCode = match.User!.UserCode,
-                FullName = match.User.FullName,
+                UserCode = matchedUser.UserCode,
+                FullName = matchedUser.FullName,
                 Score = Math.Round((1 - match.Distance) * 100, 2)
             });
+        }
+
+        private System.Net.IPAddress? GetClientIpAddress()
+        {
+            var remoteIp = HttpContext.Connection.RemoteIpAddress;
+
+            if (remoteIp == null)
+                return null;
+
+            if (System.Net.IPAddress.IsLoopback(remoteIp))
+            {
+                var forwardedFor =
+                    Request.Headers["X-Forwarded-For"].FirstOrDefault();
+
+                var originalIp = forwardedFor?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(value => value.Trim())
+                    .FirstOrDefault(value =>
+                        System.Net.IPAddress.TryParse(value, out _));
+
+                if (System.Net.IPAddress.TryParse(originalIp, out var parsedIp))
+                    return parsedIp;
+            }
+
+            return remoteIp;
+        }
+
+        private static string? GetIpV4(System.Net.IPAddress? address)
+        {
+            if (address == null)
+                return null;
+
+            if (address.IsIPv4MappedToIPv6)
+                return address.MapToIPv4().ToString();
+
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                return address.ToString();
+
+            if (address.Equals(System.Net.IPAddress.IPv6Loopback))
+                return "127.0.0.1";
+
+            return null;
+        }
+
+        private static string? GetIpV6(System.Net.IPAddress? address)
+        {
+            if (address == null)
+                return null;
+
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                return address.ToString();
+
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                return address.MapToIPv6().ToString();
+
+            return null;
         }
 
         // Helper: Xử lý Tensor & Run ArcFace ONNX
