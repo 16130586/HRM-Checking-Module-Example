@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import CameraView from "./CameraView";
 import FaceOverlay from "./FaceOverlay";
@@ -27,6 +28,8 @@ export default function FaceScanner({
   userId = null,
   onSuccess,
 }) {
+  const navigate = useNavigate();
+
   const {
     videoRef,
     isReady,
@@ -61,6 +64,9 @@ export default function FaceScanner({
 
   const [processing, setProcessing] =
     useState(false);
+
+  const [reviewIndex, setReviewIndex] =
+    useState(0);
 
   function invalidate(message) {
     setFaceValid(false);
@@ -249,10 +255,11 @@ export default function FaceScanner({
     }
 
     setCapturedImage(base64Image);
+    setReviewIndex(0);
     setError("");
     setStatus(
       mode === "register"
-        ? "Đã đủ 5 góc - kiểm tra và xác nhận"
+        ? "Xem lại ảnh trước khi xác nhận"
         : "Đã chụp khuôn mặt"
     );
 
@@ -281,6 +288,16 @@ export default function FaceScanner({
       return;
     }
 
+    if (
+      mode === "register" &&
+      capturedImages.length > 0
+    ) {
+      setCapturedImages((images) =>
+        images.slice(0, reviewIndex)
+      );
+      setRegistrationStep(reviewIndex);
+    }
+
     setCapturedImage(null);
     setFaceValid(false);
     setError("");
@@ -290,6 +307,31 @@ export default function FaceScanner({
         : "Đưa khuôn mặt vào khung"
     );
   }
+
+  const reviewImages =
+    mode === "register"
+      ? [...capturedImages, capturedImage]
+      : [capturedImage];
+
+  const selectedReviewImage =
+    reviewImages[reviewIndex] || capturedImage;
+
+  const registrationGuidance = [
+    "Khuôn mặt hợp lệ - Bấm chụp",
+    "Không tìm thấy khuôn mặt",
+    "Không thể mở camera",
+  ].includes(status)
+    ? REGISTRATION_POSES[registrationStep].instruction
+    : error || status;
+
+  const checkInGuidance =
+    faceValid
+      ? "Giữ nguyên khuôn mặt và bấm chụp"
+      : error?.includes("xa Oval")
+        ? "Đưa mặt lại gần camera"
+        : error?.includes("sát Oval")
+          ? "Lùi mặt ra xa camera"
+          : "Đưa khuôn mặt vào giữa Oval";
 
   /*
    * Send captured image to API.
@@ -335,15 +377,28 @@ export default function FaceScanner({
           );
       }
 
+      const employeeCode =
+        result?.userCode ||
+        result?.UserCode ||
+        "";
+      const employeeName =
+        result?.fullName ||
+        result?.FullName ||
+        "nhân viên";
+
       setStatus(
         mode === "register"
           ? "Đăng ký thành công!"
-          : "Chấm công thành công!"
+          : `Check-in thành công! Welcome nhân viên: ${employeeCode} ${employeeName}`
       );
 
       setError("");
 
       onSuccess?.(result);
+
+      window.setTimeout(() => {
+        navigate("/");
+      }, mode === "register" ? 1000 : 3000);
     } catch (err) {
       console.error(
         "Face API error:",
@@ -370,35 +425,24 @@ export default function FaceScanner({
    */
   if (!capturedImage) {
     return (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          width: "100%",
-          height: "100dvh",
-          overflow: "hidden",
-          background: "#000",
-        }}
-      >
+      <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-black">
         {mode === "register" && (
-          <div
-            style={{
-              position: "absolute",
-              top: "96px",
-              left: "16px",
-              right: "16px",
-              zIndex: 50,
-              color: "#fff",
-              textAlign: "center",
-              pointerEvents: "none",
-            }}
-          >
-            <div style={{ fontSize: "14px", opacity: 0.85 }}>
+          <div className="pointer-events-none absolute left-4 right-4 top-24 z-50 text-center text-white">
+            <div className="text-sm opacity-85">
               Bước {registrationStep + 1} / {REGISTRATION_POSES.length}
             </div>
-            <strong style={{ fontSize: "20px" }}>
-              {REGISTRATION_POSES[registrationStep].instruction}
+            <strong className="mt-1 block text-xl">
+              Chụp ảnh góc mặt: {REGISTRATION_POSES[registrationStep].label}
             </strong>
+            <div className="mt-1 text-base">
+              Hướng dẫn: {registrationGuidance}
+            </div>
+          </div>
+        )}
+
+        {mode !== "register" && (
+          <div className="pointer-events-none absolute left-4 right-4 top-24 z-50 text-center text-lg font-bold text-white">
+            {checkInGuidance}
           </div>
         )}
 
@@ -408,94 +452,18 @@ export default function FaceScanner({
         />
 
         {/* Dark overlay */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "rgba(0,0,0,0.20)",
-            pointerEvents: "none",
-            zIndex: 10,
-          }}
-        />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-black/20" />
 
         {/* Face oval */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 20,
-            pointerEvents: "none",
-          }}
-        >
+        <div className="pointer-events-none absolute inset-0 z-20">
           <FaceOverlay
             valid={faceValid}
+            spotlight
           />
-        </div>
-
-        {/* Status */}
-        <div
-          style={{
-            position: "absolute",
-            top: "24px",
-            left: "16px",
-            right: "16px",
-            zIndex: 50,
-            pointerEvents: "none",
-          }}
-        >
-          <FaceStatus
-            status={status}
-            error={error}
-          />
-        </div>
-
-        {/* Face count */}
-        <div
-          style={{
-            position: "absolute",
-            top: "90px",
-            left: 0,
-            right: 0,
-            zIndex: 50,
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <div
-            style={{
-              padding:
-                "7px 14px",
-              borderRadius: "999px",
-              background:
-                "rgba(0,0,0,0.65)",
-              color: "#fff",
-              fontSize: "13px",
-              fontWeight: 500,
-            }}
-          >
-            {faceCount} face
-            {faceCount !== 1
-              ? "s"
-              : ""}{" "}
-            detected
-          </div>
         </div>
 
         {/* Capture button */}
-        <div
-          style={{
-            position: "fixed",
-            left: 0,
-            right: 0,
-            bottom: "32px",
-            zIndex: 9999,
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
+        <div className="pointer-events-none fixed inset-x-0 bottom-8 z-[9999] flex justify-center">
           <button
             type="button"
             onClick={handleCapture}
@@ -504,50 +472,13 @@ export default function FaceScanner({
               processing
             }
             aria-label="Chụp ảnh"
-            style={{
-              pointerEvents:
-                "auto",
-              width: "82px",
-              height: "82px",
-              padding: "5px",
-              borderRadius:
-                "50%",
-              border:
-                "4px solid rgba(255,255,255,0.9)",
-              background:
-                faceValid
-                  ? "#fff"
-                  : "#777",
-              boxShadow:
-                "0 4px 20px rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems:
-                "center",
-              justifyContent:
-                "center",
-              cursor: faceValid
-                ? "pointer"
-                : "not-allowed",
-              opacity: faceValid
-                ? 1
-                : 0.55,
-              transition:
-                "transform 0.1s ease",
-            }}
+            className={`pointer-events-auto flex h-[82px] w-[82px] items-center justify-center rounded-full border-4 border-white/90 p-[5px] shadow-[0_4px_20px_rgba(0,0,0,0.5)] ${
+              faceValid
+                ? "cursor-pointer bg-white opacity-100"
+                : "cursor-not-allowed bg-neutral-500 opacity-55"
+            }`}
           >
-            <span
-              style={{
-                display: "block",
-                width: "62px",
-                height: "62px",
-                borderRadius:
-                  "50%",
-                background:
-                  "#fff",
-                border:
-                  "2px solid #555",
-              }}
-            />
+            <span className="block h-[62px] w-[62px] rounded-full border-2 border-neutral-600 bg-white" />
           </button>
         </div>
       </div>
@@ -560,96 +491,90 @@ export default function FaceScanner({
    * -------------------------
    */
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100%",
-        height: "100dvh",
-        overflow: "hidden",
-        background: "#000",
-      }}
-    >
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-black">
       {/* Captured image */}
       <img
-        src={capturedImage}
+        src={selectedReviewImage}
         alt="Captured face"
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
+        className="absolute left-1/2 top-1/2 h-[min(68vw,360px)] w-[min(68vw,360px)] -translate-x-1/2 -translate-y-1/2 rounded-3xl object-contain shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
       />
 
-      {/* Preview overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "rgba(0,0,0,0.15)",
-          pointerEvents: "none",
-          zIndex: 10,
-        }}
-      />
+      {mode === "register" && (
+        <>
+          <div className="absolute left-4 right-4 top-8 z-50 text-center text-white">
+            <strong className="text-xl">Xem lại ảnh đăng ký</strong>
+            <div className="mt-1 text-sm opacity-85">
+              Bước {reviewIndex + 1} / {REGISTRATION_POSES.length}: {REGISTRATION_POSES[reviewIndex].label}
+            </div>
+          </div>
 
-      {/* Preview status */}
-      <div
-        style={{
-          position: "absolute",
-          top: "24px",
-          left: "16px",
-          right: "16px",
-          zIndex: 50,
-        }}
-      >
+          <button
+            type="button"
+            onClick={() => setReviewIndex((index) => Math.max(0, index - 1))}
+            disabled={reviewIndex === 0 || processing}
+            aria-label="Xem ảnh trước"
+            className={`absolute left-3 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 p-0 text-[26px] leading-none text-gray-800 shadow-[0_4px_16px_rgba(0,0,0,0.28)] ${
+              reviewIndex === 0 ? "cursor-not-allowed opacity-35" : "cursor-pointer opacity-100"
+            }`}
+          >
+            ‹
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setReviewIndex((index) => Math.min(reviewImages.length - 1, index + 1))}
+            disabled={reviewIndex === reviewImages.length - 1 || processing}
+            aria-label="Xem ảnh sau"
+            className={`absolute right-3 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 p-0 text-[26px] leading-none text-gray-800 shadow-[0_4px_16px_rgba(0,0,0,0.28)] ${
+              reviewIndex === reviewImages.length - 1 ? "cursor-not-allowed opacity-35" : "cursor-pointer opacity-100"
+            }`}
+          >
+            ›
+          </button>
+
+          <div className="fixed inset-x-4 bottom-28 z-50 flex justify-center gap-2">
+            {reviewImages.map((image, index) => (
+              <button
+                key={`${index}-${image.slice(-12)}`}
+                type="button"
+                onClick={() => setReviewIndex(index)}
+                aria-label={`Xem ảnh bước ${index + 1}`}
+                className={`h-[52px] w-[52px] cursor-pointer rounded-lg bg-gray-900 p-0.5 ${
+                  index === reviewIndex
+                    ? "border-[3px] border-green-500"
+                    : "border-2 border-white/70"
+                }`}
+              >
+                <img
+                  src={image}
+                  alt={`Ảnh bước ${index + 1}`}
+                  className="h-full w-full rounded object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className={`absolute left-4 right-4 z-50 ${mode === "register" ? "top-[88px]" : "top-6"}`}>
         <FaceStatus
           status={status}
           error={error}
+          registration={mode === "register"}
         />
       </div>
 
+      {/* Preview overlay */}
+      <div className="pointer-events-none absolute inset-0 z-10 bg-black/15" />
+
       {/* Action buttons */}
-      <div
-        style={{
-          position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: "32px",
-          zIndex: 9999,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "16px",
-          padding:
-            "0 20px",
-        }}
-      >
+      <div className="fixed inset-x-0 bottom-8 z-[9999] flex items-center justify-center gap-4 px-5">
         {/* Retake */}
         <button
           type="button"
           onClick={handleRetake}
           disabled={processing}
-          style={{
-            minWidth: "120px",
-            padding:
-              "14px 20px",
-            border: "none",
-            borderRadius:
-              "999px",
-            background: "#fff",
-            color: "#111",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor:
-              "pointer",
-            boxShadow:
-              "0 4px 15px rgba(0,0,0,0.4)",
-            opacity:
-              processing ? 0.5 : 1,
-          }}
+          className="min-w-[120px] cursor-pointer rounded-full bg-white px-5 py-3.5 text-base font-semibold text-gray-900 shadow-[0_4px_15px_rgba(0,0,0,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Chụp lại
         </button>
@@ -661,28 +586,11 @@ export default function FaceScanner({
             handleConfirm
           }
           disabled={processing}
-          style={{
-            minWidth: "120px",
-            padding:
-              "14px 20px",
-            border: "none",
-            borderRadius:
-              "999px",
-            background:
-              "#2563eb",
-            color: "#fff",
-            fontSize: "16px",
-            fontWeight: 600,
-            cursor:
-              "pointer",
-            boxShadow:
-              "0 4px 15px rgba(0,0,0,0.4)",
-            opacity:
-              processing ? 0.5 : 1,
-          }}
+          aria-busy={processing}
+          className="min-w-[120px] cursor-pointer rounded-full bg-blue-600 px-5 py-3.5 text-base font-semibold text-white shadow-[0_4px_15px_rgba(0,0,0,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {processing
-            ? "Đang xử lý..."
+            ? "Đang lưu..."
             : "Xác nhận"}
         </button>
       </div>

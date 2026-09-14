@@ -1,32 +1,55 @@
 export default function FaceStatus({
   status,
   error,
+  registration = false,
 }) {
+  const success =
+    !error &&
+    status?.includes("thành công");
+
+  const hiddenStatus = [
+    "Khuôn mặt hợp lệ - Bấm chụp",
+    "Không tìm thấy khuôn mặt",
+    "Không thể mở camera",
+  ].includes(status);
+
+  if (hiddenStatus && !error) {
+    return null;
+  }
+
   return (
     <div className="
-      absolute
-      z-30
-      top-6
-      left-0
-      right-0
       flex
       justify-center
       px-4
     ">
-      <div className={`
-        px-5
-        py-3
+      <div
+        className={`
+        max-w-[320px]
         rounded-full
-        backdrop-blur
-        text-sm
+        border
+        px-[18px]
+        py-2.5
         text-center
+        text-base
+        font-bold
+        leading-[1.4]
+        backdrop-blur
+        shadow-lg
+        whitespace-normal
+        break-words
 
         ${
           error
-            ? "bg-red-500/90 text-white"
-            : "bg-black/60 text-white"
+            ? registration
+              ? "border-red-400/80 bg-black/80 text-red-300"
+              : "bg-red-500/90 text-white"
+            : success
+              ? "border-emerald-400/80 bg-black/80 text-emerald-300"
+              : "border-black/10 bg-white/95 text-black"
         }
-      `}>
+      `}
+      >
         {error || status}
       </div>
     </div>

@@ -16,7 +16,7 @@ namespace FaceAPI.Controllers
     [Route("api/[controller]")]
     public class AttendanceController : ControllerBase
     {
-        private static InferenceSession _w600OnnxSession;
+        private static InferenceSession? _w600OnnxSession;
 
         private PgDbContext _db { get; set; }
         private ILogger<AttendanceController> _logger { get; set; }
@@ -28,7 +28,10 @@ namespace FaceAPI.Controllers
 
             if (_w600OnnxSession == null)
             {
-                var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MLModels", "w600k_r50.onnx");
+                var modelPath = Path.Combine(AppContext.BaseDirectory, "MLModels", "w600k_r50.onnx");
+                if (!System.IO.File.Exists(modelPath))
+                    throw new FileNotFoundException($"ONNX model was not found at '{modelPath}'.", modelPath);
+
                 _w600OnnxSession = new InferenceSession(modelPath);
             }
         }
@@ -92,9 +95,10 @@ namespace FaceAPI.Controllers
                 return BadRequest("Ảnh không hợp lệ");
 
             var targetVector = ExtractFaceVector(request.Base64Image);
-            _logger.LogInformation("VECTOR: " + string.Join(", ", targetVector));
             if (targetVector == null)
                 return BadRequest("Không xử lý được khuôn mặt");
+
+            _logger.LogInformation("VECTOR: {Vector}", string.Join(", ", targetVector));
 
             var searchVector = new Vector(targetVector);
 
@@ -178,7 +182,7 @@ namespace FaceAPI.Controllers
                 // Tạo DenseTensor từ mảng 1D chuẩn layout
                 DenseTensor<float> inputTensor = new(inputData, [1, 3, 112, 112]);
 
-                var inputName = _w600OnnxSession.InputMetadata.Keys.First();
+                var inputName = _w600OnnxSession!.InputMetadata.Keys.First();
                 List<NamedOnnxValue> inputs =
                 [
                       NamedOnnxValue.CreateFromTensor(inputName, inputTensor)
@@ -186,7 +190,7 @@ namespace FaceAPI.Controllers
 
                 var inputValues = inputTensor.ToArray();
 
-                using var results = _w600OnnxSession.Run(inputs);
+                using var results = _w600OnnxSession!.Run(inputs);
 
                 var outputTensor = results[0].AsEnumerable<float>().ToArray();
 

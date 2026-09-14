@@ -8,11 +8,49 @@ export const CAMERA_HEIGHT = 720;
 export const FACE_CONFIG = {
     minDetectionConfidence: 0.6,
 
-    minFaceWidthRatio: 0.18,
-    maxFaceWidthRatio: 0.55,
-
-    centerToleranceX: 0.20,
-    centerToleranceY: 0.20,
+    poses: {
+        front: {
+            skipPoseValidation: true,
+            minFaceWidthRatio: 0.25,
+            maxFaceWidthRatio: 0.55,
+            minFaceHeightRatio: 0.25,
+            maxFaceHeightRatio: 0.70,
+            centerToleranceX: 0.15,
+            centerToleranceY: 0.15,
+        },
+        left: {
+            minFaceWidthRatio: 0.17,
+            maxFaceWidthRatio: 0.60,
+            centerToleranceX: 0.25,
+            centerToleranceY: 0.25,
+            yawMin: 0.15,
+            pitchCenter: 0.25,
+            pitchTolerance: 0.32,
+        },
+        right: {
+            minFaceWidthRatio: 0.17,
+            maxFaceWidthRatio: 0.60,
+            centerToleranceX: 0.25,
+            centerToleranceY: 0.25,
+            yawMax: -0.15,
+            pitchCenter: 0.25,
+            pitchTolerance: 0.32,
+        },
+        up: {
+            minFaceWidthRatio: 0.17,
+            maxFaceWidthRatio: 0.60,
+            centerToleranceX: 0.25,
+            centerToleranceY: 0.25,
+            pitchMax: 0.14,
+        },
+        down: {
+            minFaceWidthRatio: 0.15,
+            maxFaceWidthRatio: 0.65,
+            centerToleranceX: 0.28,
+            centerToleranceY: 0.28,
+            pitchMin: 0.30,
+        },
+    },
 };
 
 export const REGISTRATION_POSES = [

@@ -27,8 +27,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="MLModels\w600k_r50.onnx">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  <None Update="MLModels/w600k_r50.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>Always</CopyToPublishDirectory>
 	  </None>
 	</ItemGroup>
 

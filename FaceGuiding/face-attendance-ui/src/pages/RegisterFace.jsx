@@ -12,8 +12,6 @@ export default function RegisterFace() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [result, setResult] = useState(null);
-
   // =========================
   // Load employees
   // =========================
@@ -72,14 +70,12 @@ export default function RegisterFace() {
   function handleSelectEmployee(employee) {
     setSelectedEmployee(employee);
     setUserCode(employee.userCode);
-    setResult(null);
     setError("");
   }
 
   function handleReset() {
     setSelectedEmployee(null);
     setUserCode("");
-    setResult(null);
     setError("");
   }
 
@@ -116,24 +112,7 @@ export default function RegisterFace() {
           <FaceScanner
             mode="register"
             userId={selectedEmployee.id}
-            onSuccess={setResult}
           />
-
-          {result && (
-            <div className="mt-4 rounded-lg border border-green-300 bg-green-50 p-4">
-              <div className="font-semibold text-green-700">
-                Đăng ký khuôn mặt thành công
-              </div>
-
-              <pre className="mt-2 overflow-auto text-sm">
-                {JSON.stringify(
-                  result,
-                  null,
-                  2
-                )}
-              </pre>
-            </div>
-          )}
         </div>
       </div>
     );
