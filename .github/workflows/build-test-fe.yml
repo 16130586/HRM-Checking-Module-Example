@@ -10,10 +10,12 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-test:
 
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: "FaceGuiding"
     strategy:
       matrix:
         node-version: [24.x]
@@ -26,6 +28,11 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+    - name: Clean Install
+      run: npm ci
+      
+    - name: Build
+      run: npm run build --if-present
+    
+    - name: Test
+      run: npm run test
