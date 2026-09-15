@@ -1,6 +1,6 @@
 import {
   API_BASE_URL,
-} from "../utils/constants";
+} from "../utils/constants.js";
 
 export async function apiRequest(
   endpoint,

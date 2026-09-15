@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../utils/constants";
+import { API_BASE_URL } from "../utils/constants.js";
 
 export async function getEmployees() {
   const response = await fetch(
