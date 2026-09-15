@@ -16,6 +16,7 @@ jobs:
     defaults:
       run:
         working-directory: "FaceGuiding"
+        
     strategy:
       matrix:
         node-version: [24.x]
@@ -28,6 +29,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        
     - name: Clean Install
       run: npm ci
       
