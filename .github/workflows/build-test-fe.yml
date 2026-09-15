@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "FaceGuiding"
+        working-directory: FaceGuiding
         
     strategy:
       matrix:
@@ -28,7 +28,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: "FaceGuiding/package-lock.json"
+        cache-dependency-path: FaceGuiding/package-lock.json
         
     - name: Clean Install
       run: npm ci
